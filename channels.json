@@ -1,0 +1,26 @@
+{
+  "categories": [
+    {
+      "name": "Entertainment",
+      "channels": [
+        {
+          "name": "&TV",
+          "logo": "https://i.imgur.com/xxxx.png",
+          "quality": "1080p",
+          "url": "PASTE_LEGAL_M3U8"
+        }
+      ]
+    },
+    {
+      "name": "News",
+      "channels": [
+        {
+          "name": "Aaj Tak",
+          "logo": "https://i.imgur.com/xxxx.png",
+          "quality": "1080p",
+          "url": "PASTE_LEGAL_M3U8"
+        }
+      ]
+    }
+  ]
+}
