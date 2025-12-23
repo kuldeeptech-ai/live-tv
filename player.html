@@ -17,26 +17,46 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  background: #000;
-  overflow: hidden;
+  background: #0b0b0b;
 }
 
+/* ===== Half screen premium look ===== */
 .player-wrapper {
-  width: 100vw;
-  height: 100vh;
+  max-width: 900px;
+  margin: 16px auto;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid #2a2a2a;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.15);
+  background: #000;
+}
+
+/* ===== Fullscreen remove border ===== */
+.player-wrapper:fullscreen {
+  max-width: none;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 video {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: black;
+}
+
+/* Plyr custom color */
+:root {
+  --plyr-color-main: #ff7a00;
 }
 </style>
 </head>
 
 <body>
 
-<div class="player-wrapper">
+<div class="player-wrapper" id="wrapper">
   <video id="player" playsinline></video>
 </div>
 
@@ -45,12 +65,8 @@ video {
 
 <script>
 const streamUrl = localStorage.getItem("stream");
-
-if (!streamUrl) {
-  alert("Stream URL not found");
-}
-
 const video = document.getElementById("player");
+const wrapper = document.getElementById("wrapper");
 
 /* Init Plyr */
 const player = new Plyr(video, {
@@ -62,16 +78,29 @@ const player = new Plyr(video, {
     'volume',
     'settings',
     'fullscreen'
-  ],
-  fullscreen: { enabled: true, fallback: true }
+  ]
 });
 
-/* HLS attach */
+/* ===== Force landscape on fullscreen ===== */
+player.on('enterfullscreen', () => {
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(()=>{});
+  }
+});
+
+player.on('exitfullscreen', () => {
+  if (screen.orientation && screen.orientation.unlock) {
+    screen.orientation.unlock();
+  }
+});
+
+/* ===== HLS attach ===== */
 if (Hls.isSupported()) {
   const hls = new Hls({
     enableWorker: true,
     lowLatencyMode: true
   });
+
   hls.loadSource(streamUrl);
   hls.attachMedia(video);
 
