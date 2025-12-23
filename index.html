@@ -5,70 +5,155 @@
 <title>Live TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+<!-- Theme -->
+<meta name="theme-color" content="#0b0b0b">
 
 <!-- CSS -->
 <link rel="stylesheet" href="assets/style.css">
+
+<style>
+/* ===== PAGE LAYOUT ===== */
+body {
+  background: radial-gradient(circle at top, #151515, #0b0b0b 60%);
+}
+
+/* ===== HEADER ===== */
+.header {
+  padding: 16px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ===== SEARCH ===== */
+.search-wrap {
+  padding: 0 14px 10px;
+}
+
+#search {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  color: #fff;
+  font-size: 15px;
+}
+
+/* ===== CATEGORIES ===== */
+#categories {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 14px 14px;
+}
+
+#categories button {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid #2a2a2a;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+#categories button:hover {
+  background: rgba(255,122,0,0.2);
+  border-color: #ff7a00;
+}
+
+/* ===== GRID ===== */
+#grid {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: linear-gradient(180deg, #1a1a1a, #0e0e0e);
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid #262626;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
+.card img {
+  width: 100%;
+  height: 70px;
+  object-fit: contain;
+}
+
+.card span {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  text-align: center;
+  opacity: .9;
+}
+</style>
 </head>
 
 <body>
 
-<!-- Search -->
-<input
-  type="text"
-  id="search"
-  placeholder="Search channel..."
-  autocomplete="off"
-/>
+<div class="header">📺 Live TV</div>
 
-<!-- Categories -->
+<div class="search-wrap">
+  <input
+    id="search"
+    type="text"
+    placeholder="Search channels..."
+    autocomplete="off"
+  />
+</div>
+
 <div id="categories"></div>
 
-<!-- Channel Grid -->
 <div id="grid"></div>
 
 <script>
 let DATA = null;
 
-/* ===== LOAD JSON ===== */
+/* ===== LOAD CHANNEL JSON ===== */
 fetch("data/channels.json")
-  .then(res => {
-    if (!res.ok) throw new Error("JSON load failed");
-    return res.json();
-  })
-  .then(json => {
-    DATA = json;
+  .then(r => r.json())
+  .then(j => {
+    DATA = j;
     renderCategories();
     renderChannels();
-  })
-  .catch(err => {
-    alert("Channel list load nahi hui");
-    console.error(err);
   });
 
-/* ===== RENDER CATEGORIES ===== */
+/* ===== CATEGORIES ===== */
 function renderCategories() {
-  const catBox = document.getElementById("categories");
-  catBox.innerHTML = "";
+  const box = document.getElementById("categories");
+  box.innerHTML = "";
 
-  const allBtn = document.createElement("button");
-  allBtn.textContent = "All";
-  allBtn.onclick = () => renderChannels();
-  catBox.appendChild(allBtn);
+  const all = document.createElement("button");
+  all.textContent = "All";
+  all.onclick = () => renderChannels();
+  box.appendChild(all);
 
   DATA.categories.forEach(cat => {
-    const btn = document.createElement("button");
-    btn.textContent = cat.name;
-    btn.onclick = () => renderChannels(cat.name);
-    catBox.appendChild(btn);
+    const b = document.createElement("button");
+    b.textContent = cat.name;
+    b.onclick = () => renderChannels(cat.name);
+    box.appendChild(b);
   });
 }
 
-/* ===== RENDER CHANNELS ===== */
+/* ===== CHANNEL GRID ===== */
 function renderChannels(category = null) {
-  const query = document.getElementById("search").value.toLowerCase();
+  const q = document.getElementById("search").value.toLowerCase();
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
 
@@ -76,7 +161,7 @@ function renderChannels(category = null) {
     if (category && cat.name !== category) return;
 
     cat.channels.forEach(ch => {
-      if (!ch.name.toLowerCase().includes(query)) return;
+      if (!ch.name.toLowerCase().includes(q)) return;
 
       const card = document.createElement("div");
       card.className = "card";
@@ -86,7 +171,11 @@ function renderChannels(category = null) {
         <span>${ch.name} (${ch.quality})</span>
       `;
 
-      card.onclick = () => openPlayer(ch.url, ch.name);
+      card.onclick = () => {
+        localStorage.setItem("stream", ch.url);
+        localStorage.setItem("title", ch.name);
+        location.href = "player.html";
+      };
 
       grid.appendChild(card);
     });
@@ -94,22 +183,8 @@ function renderChannels(category = null) {
 }
 
 /* ===== SEARCH ===== */
-document.getElementById("search").addEventListener("input", () => {
-  renderChannels();
-});
-
-/* ===== OPEN PLAYER ===== */
-function openPlayer(url, name) {
-  if (!url) {
-    alert("Stream URL missing");
-    return;
-  }
-
-  localStorage.setItem("stream", url);
-  localStorage.setItem("title", name);
-
-  window.location.href = "player.html";
-}
+document.getElementById("search")
+  .addEventListener("input", () => renderChannels());
 </script>
 
 </body>
