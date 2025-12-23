@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+
+<h2>Admin – Channel JSON Generator</h2>
+
+<textarea id="json" style="width:100%;height:80vh"></textarea>
+<br>
+<button onclick="download()">Download channels.json</button>
+
+<script>
+fetch("data/channels.json")
+.then(r=>r.text())
+.then(t=>json.value=t);
+
+function download(){
+  const b=new Blob([json.value],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(b);
+  a.download="channels.json";
+  a.click();
+}
+</script>
+</body>
+</html>

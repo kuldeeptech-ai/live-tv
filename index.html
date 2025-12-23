@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Live TV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<input id="search" placeholder="Search channel…">
+
+<div id="categories"></div>
+<div id="grid"></div>
+
+<script>
+let DATA;
+
+fetch("data/channels.json")
+.then(r=>r.json())
+.then(d=>{
+  DATA=d;
+  renderCategories();
+  renderChannels();
+});
+
+function renderCategories(){
+  const c=document.getElementById("categories");
+  c.innerHTML="<button onclick='renderChannels()'>All</button>";
+  DATA.categories.forEach(cat=>{
+    const b=document.createElement("button");
+    b.innerText=cat.name;
+    b.onclick=()=>renderChannels(cat.name);
+    c.appendChild(b);
+  });
+}
+
+function renderChannels(cat){
+  const q=document.getElementById("search").value.toLowerCase();
+  const g=document.getElementById("grid");
+  g.innerHTML="";
+  DATA.categories.forEach(c=>{
+    if(cat && c.name!==cat) return;
+    c.channels.forEach(ch=>{
+      if(!ch.name.toLowerCase().includes(q)) return;
+      g.innerHTML+=`
+      <div class="card" onclick="openPlayer('${ch.url}','${ch.name}')">
+        <img src="${ch.logo}">
+        <span>${ch.name} (${ch.quality})</span>
+      </div>`;
+    });
+  });
+}
+
+search.oninput=()=>renderChannels();
+
+function openPlayer(url,name){
+  localStorage.setItem("stream",url);
+  localStorage.setItem("title",name);
+  location.href="player.html";
+}
+</script>
+
+</body>
+</html>
