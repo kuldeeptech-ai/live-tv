@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Channel JSON Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h2 {
+  margin: 0;
+}
+
+button {
+  background: #ff7a00;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.box {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 14px;
+}
+
+textarea {
+  width: 100%;
+  height: 260px;
+  background: #0f0f0f;
+  color: #00ff6a;
+  border-radius: 12px;
+  padding: 14px;
+  border: none;
+  margin-top: 14px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h2>📺 Channel JSON Generator</h2>
+    <button onclick="addBox()">+ Add Channel</button>
+  </div>
+
+  <div id="boxes"></div>
+
+  <h3 style="margin-top:20px">🔧 Auto Generated channels.json</h3>
+  <textarea id="output" readonly></textarea>
+
+  <div class="actions">
+    <button class="secondary" onclick="copyJSON()">Copy JSON</button>
+    <button class="secondary" onclick="clearAll()">Clear All</button>
+  </div>
+
+</div>
+
+<script>
+let boxes = [];
+
+/* ===== INITIAL LOAD ===== */
+if (!localStorage.getItem("channel_boxes")) {
+  // First time: load existing channels.json
+  fetch("data/channels.json")
+    .then(r => r.json())
+    .then(data => {
+      data.categories.forEach(cat => {
+        cat.channels.forEach(ch => {
+          boxes.push({
+            category: cat.name,
+            name: ch.name || "",
+            logo: ch.logo || "",
+            quality: ch.quality || "",
+            url: ch.url || ""
+          });
+        });
+      });
+      save();
+      render();
+    })
+    .catch(() => {
+      // If channels.json not found or empty
+      boxes = [];
+      render();
+    });
+} else {
+  boxes = JSON.parse(localStorage.getItem("channel_boxes"));
+  render();
+}
+
+/* ===== ADD NEW BOX ===== */
+function addBox() {
+  boxes.push({
+    category: "",
+    name: "",
+    logo: "",
+    quality: "",
+    url: ""
+  });
+  save();
+  render();
+}
+
+/* ===== RENDER UI ===== */
+function render() {
+  const wrap = document.getElementById("boxes");
+  wrap.innerHTML = "";
+
+  boxes.forEach((b, i) => {
+    const div = document.createElement("div");
+    div.className = "box";
+    div.innerHTML = `
+      <div class="grid">
+        <input placeholder="Category" value="${b.category}" oninput="update(${i}, 'category', this.value)">
+        <input placeholder="Channel Name" value="${b.name}" oninput="update(${i}, 'name', this.value)">
+        <input placeholder="Logo URL" value="${b.logo}" oninput="update(${i}, 'logo', this.value)">
+        <input placeholder="Quality (1080p)" value="${b.quality}" oninput="update(${i}, 'quality', this.value)">
+        <input placeholder="m3u8 URL" value="${b.url}" oninput="update(${i}, 'url', this.value)">
+      </div>
+      <button class="secondary" style="margin-top:10px" onclick="removeBox(${i})">Delete</button>
+    `;
+    wrap.appendChild(div);
+  });
+
+  generateJSON();
+}
+
+/* ===== UPDATE FIELD ===== */
+function update(index, key, value) {
+  boxes[index][key] = value.trim();
+  save();
+  generateJSON();
+}
+
+/* ===== REMOVE BOX ===== */
+function removeBox(index) {
+  boxes.splice(index, 1);
+  save();
+  render();
+}
+
+/* ===== SAVE TO LOCAL STORAGE ===== */
+function save() {
+  localStorage.setItem("channel_boxes", JSON.stringify(boxes));
+}
+
+/* ===== GENERATE FINAL JSON ===== */
+function generateJSON() {
+  const grouped = {};
+
+  boxes.forEach(b => {
+    if (!b.category || !b.name || !b.url) return;
+
+    if (!grouped[b.category]) grouped[b.category] = [];
+    grouped[b.category].push({
+      name: b.name,
+      logo: b.logo,
+      quality: b.quality,
+      url: b.url
+    });
+  });
+
+  const result = {
+    categories: Object.keys(grouped).map(cat => ({
+      name: cat,
+      channels: grouped[cat]
+    }))
+  };
+
+  document.getElementById("output").value =
+    JSON.stringify(result, null, 2);
+}
+
+/* ===== COPY JSON ===== */
+function copyJSON() {
+  const out = document.getElementById("output");
+  out.select();
+  document.execCommand("copy");
+  alert("channels.json copied");
+}
+
+/* ===== CLEAR ALL ===== */
+function clearAll() {
+  if (!confirm("All saved channels clear kar dein?")) return;
+  localStorage.removeItem("channel_boxes");
+  boxes = [];
+  render();
+}
+</script>
+
+</body>
+</html>
