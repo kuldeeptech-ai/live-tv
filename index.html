@@ -1,54 +1,116 @@
-<script>
-let DATA;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Live TV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<!-- CSS -->
+<link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body>
+
+<!-- Search -->
+<input
+  type="text"
+  id="search"
+  placeholder="Search channel..."
+  autocomplete="off"
+/>
+
+<!-- Categories -->
+<div id="categories"></div>
+
+<!-- Channel Grid -->
+<div id="grid"></div>
+
+<script>
+let DATA = null;
+
+/* ===== LOAD JSON ===== */
 fetch("data/channels.json")
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("JSON load failed");
+    return res.json();
+  })
   .then(json => {
     DATA = json;
     renderCategories();
     renderChannels();
+  })
+  .catch(err => {
+    alert("Channel list load nahi hui");
+    console.error(err);
   });
 
+/* ===== RENDER CATEGORIES ===== */
 function renderCategories() {
-  const c = document.getElementById("categories");
-  c.innerHTML = `<button onclick="renderChannels()">All</button>`;
+  const catBox = document.getElementById("categories");
+  catBox.innerHTML = "";
+
+  const allBtn = document.createElement("button");
+  allBtn.textContent = "All";
+  allBtn.onclick = () => renderChannels();
+  catBox.appendChild(allBtn);
+
   DATA.categories.forEach(cat => {
-    const b = document.createElement("button");
-    b.textContent = cat.name;
-    b.onclick = () => renderChannels(cat.name);
-    c.appendChild(b);
+    const btn = document.createElement("button");
+    btn.textContent = cat.name;
+    btn.onclick = () => renderChannels(cat.name);
+    catBox.appendChild(btn);
   });
 }
 
-function renderChannels(category) {
-  const q = document.getElementById("search").value.toLowerCase();
-  const g = document.getElementById("grid");
-  g.innerHTML = "";
+/* ===== RENDER CHANNELS ===== */
+function renderChannels(category = null) {
+  const query = document.getElementById("search").value.toLowerCase();
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
 
   DATA.categories.forEach(cat => {
     if (category && cat.name !== category) return;
 
     cat.channels.forEach(ch => {
-      if (!ch.name.toLowerCase().includes(q)) return;
+      if (!ch.name.toLowerCase().includes(query)) return;
 
       const card = document.createElement("div");
       card.className = "card";
 
       card.innerHTML = `
-        <img src="${ch.logo}">
+        <img src="${ch.logo}" alt="${ch.name}">
         <span>${ch.name} (${ch.quality})</span>
       `;
 
-      card.onclick = () => {
-        localStorage.setItem("stream", ch.url);
-        localStorage.setItem("title", ch.name);
-        location.href = "player.html";
-      };
+      card.onclick = () => openPlayer(ch.url, ch.name);
 
-      g.appendChild(card);
+      grid.appendChild(card);
     });
   });
 }
 
-document.getElementById("search").oninput = () => renderChannels();
+/* ===== SEARCH ===== */
+document.getElementById("search").addEventListener("input", () => {
+  renderChannels();
+});
+
+/* ===== OPEN PLAYER ===== */
+function openPlayer(url, name) {
+  if (!url) {
+    alert("Stream URL missing");
+    return;
+  }
+
+  localStorage.setItem("stream", url);
+  localStorage.setItem("title", name);
+
+  window.location.href = "player.html";
+}
 </script>
+
+</body>
+</html>
