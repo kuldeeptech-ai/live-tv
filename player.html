@@ -1,24 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-</head>
-<body style="margin:0;background:black">
+<title>Live Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<video id="v" controls autoplay style="width:100%;height:100%"></video>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  overflow: hidden;
+}
+
+.player-wrap {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: black;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 👈 screen fit, not patla */
+  background: black;
+}
+</style>
+</head>
+
+<body>
+
+<div class="player-wrap">
+  <video id="video" controls autoplay playsinline></video>
+</div>
 
 <script>
-const url=localStorage.getItem("stream");
-const v=document.getElementById("v");
+const url = localStorage.getItem("stream");
 
-if(Hls.isSupported()){
-  const h=new Hls();
-  h.loadSource(url);
-  h.attachMedia(v);
-}else{
-  v.src=url;
+const video = document.getElementById("video");
+
+if (!url) {
+  alert("Stream URL not found");
+}
+
+if (Hls.isSupported()) {
+  const hls = new Hls({
+    enableWorker: true,
+    lowLatencyMode: true
+  });
+  hls.loadSource(url);
+  hls.attachMedia(video);
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    video.play();
+  });
+} else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+  video.src = url;
+  video.play();
 }
 </script>
+
 </body>
 </html>
