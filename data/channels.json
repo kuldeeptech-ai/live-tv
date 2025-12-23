@@ -4,10 +4,10 @@
       "name": "Entertainment",
       "channels": [
         {
-          "name": "&TV",
-          "logo": "https://i.imgur.com/xxxx.png",
+          "name": "ZEE CINEMA",
+          "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQd-dWPg9hDRQb0VlRBFo45p1dD_tyhOsHPkE7I44NdUP4dzuS0QC7AN5Zi&s=10",
           "quality": "1080p",
-          "url": "PASTE_LEGAL_M3U8"
+          "url": "https://amg17931-zee-amg17931c5-samsung-au-8873.playouts.now.amagi.tv/playlist.m3u8"
         }
       ]
     },
