@@ -21,6 +21,17 @@
           "url": "PASTE_LEGAL_M3U8"
         }
       ]
+      [
+      {
+      
+        {
+          "name": "Sansad Tv",
+          "logo": "https://imgur.com/QavgfiK",
+          "quality": "1080p",
+          "url": "https://playhls.media.nic.in/hls/live/lstv/lstv.m3u8"
+        }
+      
+    }
     }
   ]
 }
