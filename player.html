@@ -5,49 +5,87 @@
 <title>Live Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Plyr CSS -->
+<!-- Plyr -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.css">
-
-<!-- HLS -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.js"></script>
 
 <style>
 html, body {
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
   background: #0b0b0b;
+  color: #fff;
+  height: 100%;
+  font-family: system-ui;
 }
 
-/* ===== Half screen premium look ===== */
+/* ===== PLAYER WRAP ===== */
 .player-wrapper {
   max-width: 900px;
-  margin: 16px auto;
+  margin: 16px auto 8px;
   border-radius: 14px;
   overflow: hidden;
   border: 2px solid #2a2a2a;
-  box-shadow: 0 0 20px rgba(255, 140, 0, 0.15);
-  background: #000;
+  box-shadow: 0 0 22px rgba(255, 122, 0, 0.15);
 }
 
-/* ===== Fullscreen remove border ===== */
 .player-wrapper:fullscreen {
   max-width: none;
   margin: 0;
   border: none;
-  border-radius: 0;
   box-shadow: none;
+  border-radius: 0;
 }
 
-video {
+/* ===== SUGGESTIONS ===== */
+.suggestions {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.suggestions h3 {
+  margin: 8px 4px;
+  font-size: 14px;
+  opacity: .9;
+}
+
+.suggestion-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.s-card {
+  min-width: 120px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.s-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,.6);
+}
+
+.s-card img {
   width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  background: black;
+  height: 50px;
+  object-fit: contain;
 }
 
-/* Plyr custom color */
+.s-card span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  text-align: center;
+  opacity: .9;
+}
+
 :root {
   --plyr-color-main: #ff7a00;
 }
@@ -56,19 +94,26 @@ video {
 
 <body>
 
+<!-- PLAYER -->
 <div class="player-wrapper" id="wrapper">
   <video id="player" playsinline></video>
 </div>
 
-<!-- Plyr JS -->
-<script src="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.js"></script>
+<!-- SUGGESTIONS -->
+<div class="suggestions">
+  <h3>Suggested Channels</h3>
+  <div class="suggestion-list" id="suggestions"></div>
+</div>
 
 <script>
-const streamUrl = localStorage.getItem("stream");
 const video = document.getElementById("player");
 const wrapper = document.getElementById("wrapper");
+const suggestionBox = document.getElementById("suggestions");
 
-/* Init Plyr */
+let hls;
+let currentUrl = localStorage.getItem("stream");
+
+/* ===== INIT PLYR ===== */
 const player = new Plyr(video, {
   controls: [
     'play',
@@ -81,37 +126,56 @@ const player = new Plyr(video, {
   ]
 });
 
-/* ===== Force landscape on fullscreen ===== */
+/* ===== FORCE LANDSCAPE ON FULLSCREEN ===== */
 player.on('enterfullscreen', () => {
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(()=>{});
-  }
+  screen.orientation?.lock?.('landscape').catch(()=>{});
 });
-
 player.on('exitfullscreen', () => {
-  if (screen.orientation && screen.orientation.unlock) {
-    screen.orientation.unlock();
-  }
+  screen.orientation?.unlock?.();
 });
 
-/* ===== HLS attach ===== */
-if (Hls.isSupported()) {
-  const hls = new Hls({
-    enableWorker: true,
-    lowLatencyMode: true
-  });
+/* ===== LOAD STREAM ===== */
+function loadStream(url) {
+  if (hls) hls.destroy();
 
-  hls.loadSource(streamUrl);
-  hls.attachMedia(video);
-
-  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+  if (Hls.isSupported()) {
+    hls = new Hls({ lowLatencyMode: true });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+  } else {
+    video.src = url;
     video.play();
-  });
+  }
 
-} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-  video.src = streamUrl;
-  video.play();
+  localStorage.setItem("stream", url);
 }
+
+loadStream(currentUrl);
+
+/* ===== LOAD SUGGESTIONS FROM JSON ===== */
+fetch("data/channels.json")
+  .then(r => r.json())
+  .then(data => {
+    const all = [];
+    data.categories.forEach(cat => {
+      cat.channels.forEach(ch => all.push(ch));
+    });
+
+    // random 8 suggestions
+    all.sort(() => 0.5 - Math.random())
+       .slice(0, 8)
+       .forEach(ch => {
+         const card = document.createElement("div");
+         card.className = "s-card";
+         card.innerHTML = `
+           <img src="${ch.logo}">
+           <span>${ch.name}</span>
+         `;
+         card.onclick = () => loadStream(ch.url);
+         suggestionBox.appendChild(card);
+       });
+  });
 </script>
 
 </body>
