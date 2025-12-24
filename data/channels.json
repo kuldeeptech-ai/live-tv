@@ -8,6 +8,48 @@
           "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQd-dWPg9hDRQb0VlRBFo45p1dD_tyhOsHPkE7I44NdUP4dzuS0QC7AN5Zi&s=10",
           "quality": "1080p",
           "url": "https://amg17931-zee-amg17931c5-samsung-au-8873.playouts.now.amagi.tv/playlist.m3u8"
+        },
+        {
+          "name": "B4U Movies",
+          "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhVAqc0J2ogpTBEIEqPhbrOsFHGLi2uaA0F0UjJ5aWHg&s=10",
+          "quality": "1080p",
+          "url": "https://cdnb4u.wiseplayout.com/B4U_Movies/master.m3u8"
+        },
+        {
+          "name": "B4U Kadak",
+          "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/B4U_Kadak.png",
+          "quality": "1080p",
+          "url": "https://cdnb4u.wiseplayout.com/B4U_Kadak/master.m3u8"
+        },
+        {
+          "name": "&Flix",
+          "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgsoWgW36XSpTt5nizc9Wt8Qx-9vkqjJoNbkJnBKiiH0m5hrkmrw3vhmA&s=10",
+          "quality": "1080p",
+          "url": "https://edge3-moblive.yuppcdn.net/drm/smil:nflixdrm.smil/index.m3u8"
+        },
+        {
+          "name": "Shemaroo Tv",
+          "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Shemaroo_TV.png",
+          "quality": "1080p",
+          "url": "https://cdn-3.pishow.tv/live/230/master.m3u8"
+        },
+        {
+          "name": "Manoranjan Tv",
+          "logo": "https://upload.wikimedia.org/wikipedia/en/d/da/ManoranjanTVLogo.jpg",
+          "quality": "1080p",
+          "url": "https://cdn-1.pishow.tv/live/1013/master.m3u8"
+        },
+        {
+          "name": "Nazara Tv",
+          "logo": "https://cdn.i.haymarketmedia.asia/?n=campaign-india%2Fcontent%2F20230330081052_Nazara_White.jpg",
+          "quality": "1080p",
+          "url": "https://epiconvh.akamaized.net/live/nazara/master.m3u8"
+        },
+        {
+          "name": "Dangal",
+          "logo": "https://upload.wikimedia.org/wikipedia/en/b/bf/DangalTVLogo.png",
+          "quality": "1080p",
+          "url": "https://live-dangal.akamaized.net/liveabr/playlist.m3u8"
         }
       ]
     },
@@ -18,7 +60,7 @@
           "name": "Sansad Tv",
           "logo": "https://play-lh.googleusercontent.com/N0_0qTFK6J1WRaLjxK6hkwkQYPOE4FC0l9uDcA-P39NuK3088K0TND6S1SKyD7v_KD4=w526-h296-rw",
           "quality": "1080p",
-          "url": "https://playhls.media.nic.in/hls/live/lstv/lstv.m3u8"
+          "url": "https://amg17931-zee-amg17931c5-samsung-au-8873.playouts.now.amagi.tv/playlist.m3u8"
         }
       ]
     },
@@ -47,6 +89,12 @@
           "logo": "https://upload.wikimedia.org/wikipedia/hi/0/00/ShowBox_TV_logo.png",
           "quality": "1080p",
           "url": "https://epiconvh.akamaized.net/live/showbox/master.m3u8"
+        },
+        {
+          "name": "Dhamaal",
+          "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0IYmQZYJmNsRTBB0SzE_w8gYcsHIZWuGfndzdiVxvyU59jA4EbOYt84I&s=10",
+          "quality": "1080p",
+          "url": "https://cdn-1.pishow.tv/live/1291/master.m3u8"
         }
       ]
     }
