@@ -5,10 +5,11 @@
 <title>Live Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Plyr -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.css">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.js"></script>
+<!-- Plyr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
+
+<!-- HLS.js -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 
 <style>
 html, body {
@@ -23,28 +24,18 @@ html, body {
 .player-card {
   max-width: 900px;
   margin: 16px auto;
-  border-radius: 20px;
+  border-radius: 18px;
   overflow: hidden;
   border: 2px solid #2a2a2a;
-  box-shadow: 0 0 25px rgba(255,122,0,.18);
   background: #000;
-  position: relative;
+  box-shadow: 0 0 20px rgba(255,122,0,.15);
 }
 
-.player-card:fullscreen {
-  max-width: none;
-  margin: 0;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* 16:9 ratio */
+/* 16:9 */
 .video-wrap {
   position: relative;
   width: 100%;
   padding-top: 56.25%;
-  background: #000;
 }
 
 .video-wrap video {
@@ -56,72 +47,19 @@ html, body {
   background: #000;
 }
 
-/* NOW PLAYING BADGE */
+/* NOW PLAYING */
 .now-playing {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(0,0,0,.7);
+  z-index: 10;
+  background: rgba(0,0,0,.65);
   border: 1px solid #ff7a00;
   color: #ff7a00;
   padding: 6px 10px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
-  z-index: 10;
-  backdrop-filter: blur(6px);
-}
-
-/* SUGGESTIONS GRID */
-.suggestions {
-  max-width: 900px;
-  margin: 8px auto 24px;
-  padding: 0 10px;
-}
-
-.suggestions h3 {
-  margin: 10px 4px;
-  font-size: 15px;
-  opacity: .9;
-}
-
-.s-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
-  gap: 12px;
-}
-
-.s-card {
-  background: linear-gradient(180deg,#1a1a1a,#0e0e0e);
-  border: 1px solid #262626;
-  border-radius: 14px;
-  padding: 12px;
-  cursor: pointer;
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s;
-}
-
-.s-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 22px rgba(0,0,0,.6);
-}
-
-.s-card.active {
-  border-color: #ff7a00;
-  box-shadow: 0 0 15px rgba(255,122,0,.4);
-}
-
-.s-card img {
-  width: 100%;
-  height: 60px;
-  object-fit: contain;
-}
-
-.s-card span {
-  display: block;
-  margin-top: 8px;
-  font-size: 13px;
-  text-align: center;
-  opacity: .9;
 }
 
 /* Plyr theme */
@@ -139,130 +77,80 @@ html, body {
     <video
       id="video"
       playsinline
-      muted
-      preload="auto"
+      webkit-playsinline
+      preload="metadata"
       crossorigin="anonymous"
     ></video>
   </div>
 </div>
 
-<div class="suggestions">
-  <h3>More Channels</h3>
-  <div class="s-grid" id="suggestions"></div>
-</div>
-
 <script>
 const video = document.getElementById("video");
-const nowText = document.getElementById("nowPlaying");
-const grid = document.getElementById("suggestions");
+const nowPlaying = document.getElementById("nowPlaying");
 
 let hls = null;
-let currentUrl = localStorage.getItem("stream");
-let currentName = localStorage.getItem("title") || "Live Channel";
 
-/* INIT PLYR (FIRST) */
+/* ===== INIT PLYR (NO AUTOPLAY, NO MUTE TRICKS) ===== */
 const player = new Plyr(video, {
-  autoplay: true,
-  muted: true,
   controls: [
-    'play','progress','current-time',
-    'mute','volume','settings','fullscreen'
+    'play',
+    'progress',
+    'current-time',
+    'mute',
+    'volume',
+    'settings',
+    'fullscreen'
   ]
 });
 
-/* LANDSCAPE FULLSCREEN */
-player.on('enterfullscreen', () => {
-  screen.orientation?.lock?.('landscape').catch(()=>{});
-});
-player.on('exitfullscreen', () => {
-  screen.orientation?.unlock?.();
-});
-
-/* PLAY STREAM – SAFE FLOW */
-function playChannel(url, name) {
+/* ===== LOAD STREAM CORRECTLY ===== */
+function loadStream(url, name) {
   if (!url) return;
 
+  nowPlaying.textContent = "Now Playing: " + (name || "Live Channel");
+
+  // Destroy old HLS
   if (hls) {
     hls.destroy();
     hls = null;
   }
 
-  nowText.textContent = "Now Playing: " + (name || "Live Channel");
-
   if (Hls.isSupported()) {
     hls = new Hls({
       enableWorker: true,
-      lowLatencyMode: true
+      capLevelToPlayerSize: true,
+      startLevel: -1
     });
 
     hls.loadSource(url);
     hls.attachMedia(video);
 
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.muted = false;        // unmute after load
-      video.play().catch(()=>{});
+      video.play().catch(() => {});
+    });
+
+    hls.on(Hls.Events.ERROR, (e, data) => {
+      console.warn("HLS error", data);
     });
 
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = url;
-    video.addEventListener("canplay", () => {
-      video.muted = false;
-      video.play().catch(()=>{});
-    }, { once:true });
+    video.addEventListener("loadedmetadata", () => {
+      video.play().catch(() => {});
+    }, { once: true });
   }
 
-  currentUrl = url;
-  currentName = name || "Live Channel";
-
-  localStorage.setItem("stream", currentUrl);
-  localStorage.setItem("title", currentName);
-
-  highlightActive();
+  localStorage.setItem("stream", url);
+  localStorage.setItem("title", name || "Live Channel");
 }
 
-/* HIGHLIGHT ACTIVE CARD */
-function highlightActive() {
-  document.querySelectorAll(".s-card").forEach(card => {
-    card.classList.toggle(
-      "active",
-      card.dataset.url === currentUrl
-    );
-  });
+/* ===== RESTORE LAST PLAYED ===== */
+const savedUrl = localStorage.getItem("stream");
+const savedName = localStorage.getItem("title");
+
+if (savedUrl) {
+  loadStream(savedUrl, savedName);
 }
-
-/* LOAD CHANNEL LIST */
-fetch("data/channels.json")
-  .then(r => r.json())
-  .then(data => {
-    const all = [];
-
-    data.categories.forEach(cat => {
-      cat.channels.forEach(ch => {
-        all.push(ch);
-
-        if (!currentName && ch.url === currentUrl) {
-          currentName = ch.name;
-          localStorage.setItem("title", currentName);
-        }
-      });
-    });
-
-    all.forEach(ch => {
-      const c = document.createElement("div");
-      c.className = "s-card";
-      c.dataset.url = ch.url;
-      c.innerHTML = `
-        <img src="${ch.logo}">
-        <span>${ch.name}</span>
-      `;
-      c.onclick = () => playChannel(ch.url, ch.name);
-      grid.appendChild(c);
-    });
-
-    if (currentUrl) {
-      playChannel(currentUrl, currentName);
-    }
-  });
 </script>
 
 </body>
