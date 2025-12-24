@@ -21,6 +21,34 @@
           "url": "https://amg17931-zee-amg17931c5-samsung-au-8873.playouts.now.amagi.tv/playlist.m3u8"
         }
       ]
+    },
+    {
+      "name": "Bhakti",
+      "channels": [
+        {
+          "name": "Satsang Tv",
+          "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCMc-RbOWzR3K9UACFJkUp_SXZg5DCd47q9FgHD9xXYSE0HitS9pmXZksi&s=10",
+          "quality": "1080p",
+          "url": "https://d2vfwvjxwtwq1t.cloudfront.net/out/v1/6b24239d5517495b986e7705490c6e65/index.m3u8"
+        },
+        {
+          "name": "Sanskar",
+          "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPDp_rivyqPX0BjRS-HU95SUaBvim3T7Uh0wBD20bsiA&s=10",
+          "quality": "1080p",
+          "url": "https://d34z4embz0hjf6.cloudfront.net/out/v1/7ac2789ff9a544a49337d1ffc54ce61c/index.m3u8"
+        }
+      ]
+    },
+    {
+      "name": "Music",
+      "channels": [
+        {
+          "name": "Showbox",
+          "logo": "https://upload.wikimedia.org/wikipedia/hi/0/00/ShowBox_TV_logo.png",
+          "quality": "1080p",
+          "url": "https://epiconvh.akamaized.net/live/showbox/master.m3u8"
+        }
+      ]
     }
   ]
 }
