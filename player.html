@@ -5,10 +5,10 @@
 <title>Live TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Plyr -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.min.js"></script>
+<!-- Video.js -->
+<link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/videojs-http-streaming@3.10.0/dist/videojs-http-streaming.min.js"></script>
 
 <style>
 body{
@@ -18,7 +18,7 @@ body{
   font-family:system-ui;
 }
 
-/* PLAYER */
+/* PLAYER CARD */
 .player-card{
   max-width:900px;
   margin:16px auto;
@@ -26,22 +26,13 @@ body{
   overflow:hidden;
   border:2px solid #2a2a2a;
   background:#000;
+  box-shadow:0 0 22px rgba(255,122,0,.18);
 }
 
-/* 16:9 */
-.video-wrap{
-  position:relative;
-  width:100%;
-  padding-top:56.25%;
-}
-
-.video-wrap video{
-  position:absolute;
-  inset:0;
+/* VIDEO.JS size */
+.video-js{
   width:100%;
   height:100%;
-  object-fit:contain;
-  background:#000;
 }
 
 /* NOW PLAYING */
@@ -62,13 +53,11 @@ body{
   margin:0 auto 24px;
   padding:0 12px;
 }
-
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
   gap:12px;
 }
-
 .card{
   background:#141414;
   border:1px solid #262626;
@@ -76,28 +65,20 @@ body{
   padding:12px;
   cursor:pointer;
 }
-
 .card.active{
   border-color:#ff7a00;
   box-shadow:0 0 14px rgba(255,122,0,.45);
 }
-
 .card img{
   width:100%;
   height:60px;
   object-fit:contain;
 }
-
 .card span{
   display:block;
   margin-top:8px;
   font-size:13px;
   text-align:center;
-}
-
-/* Plyr theme */
-:root{
-  --plyr-color-main:#ff7a00;
 }
 </style>
 </head>
@@ -106,14 +87,13 @@ body{
 
 <!-- PLAYER -->
 <div class="player-card">
-  <div class="video-wrap">
-    <video
-      id="video"
-      playsinline
-      webkit-playsinline
-      crossorigin="anonymous"
-    ></video>
-  </div>
+  <video
+    id="player"
+    class="video-js vjs-default-skin"
+    controls
+    playsinline
+    webkit-playsinline
+  ></video>
 </div>
 
 <div class="now-bar" id="now">Loading…</div>
@@ -123,76 +103,54 @@ body{
 </div>
 
 <script>
-const video = document.getElementById("video");
-const grid  = document.getElementById("grid");
-const now   = document.getElementById("now");
+const now  = document.getElementById("now");
+const grid = document.getElementById("grid");
 
-let hls = null;
-let plyr = null;
+/* INIT VIDEO.JS */
+const player = videojs("player", {
+  autoplay: false,
+  liveui: true,
+  fluid: true,
+  html5: {
+    vhs: {
+      enableLowInitialPlaylist: true
+    }
+  }
+});
+
+/* FORCE LANDSCAPE ON FULLSCREEN */
+player.on('fullscreenchange', () => {
+  if (player.isFullscreen()) {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+  } else {
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+  }
+});
+
 let currentUrl = null;
 
-/* INIT PLYR (UI ONLY) */
-plyr = new Plyr(video,{
-  controls:[
-    'play','progress','current-time',
-    'mute','volume','fullscreen'
-  ]
-});
-
-/* FORCE LANDSCAPE FULLSCREEN */
-plyr.on('enterfullscreen',()=>{
-  if(screen.orientation && screen.orientation.lock){
-    screen.orientation.lock('landscape').catch(()=>{});
-  }
-});
-plyr.on('exitfullscreen',()=>{
-  if(screen.orientation && screen.orientation.unlock){
-    screen.orientation.unlock();
-  }
-});
-
-/* HARD RESET VIDEO */
-function resetVideo(){
-  video.pause();
-  video.removeAttribute("src");
-  video.load();
-}
-
-/* PLAY CHANNEL (HLS OWNER) */
+/* PLAY CHANNEL */
 function playChannel(ch){
   if(!ch || !ch.url) return;
 
   now.textContent = "Now Playing: " + ch.name;
 
-  if(hls){
-    hls.destroy();
-    hls = null;
-  }
+  player.src({
+    src: ch.url,
+    type: "application/x-mpegURL"
+  });
 
-  resetVideo();
-
-  if(Hls.isSupported()){
-    hls = new Hls({
-      capLevelToPlayerSize:true,
-      startLevel:-1
-    });
-    hls.loadSource(ch.url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
-      setTimeout(()=>{
-        video.play().catch(()=>{});
-      },150);
-    });
-  }else{
-    video.src = ch.url;
-    video.play().catch(()=>{});
-  }
+  player.play().catch(()=>{});
 
   currentUrl = ch.url;
   highlight();
 }
 
-/* HIGHLIGHT */
+/* HIGHLIGHT ACTIVE */
 function highlight(){
   document.querySelectorAll(".card").forEach(c=>{
     c.classList.toggle("active", c.dataset.url === currentUrl);
