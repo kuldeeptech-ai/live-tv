@@ -11,15 +11,14 @@
 <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.min.js"></script>
 
 <style>
-html, body {
+body {
   margin: 0;
-  padding: 0;
   background: #0b0b0b;
   color: #fff;
   font-family: system-ui;
 }
 
-/* ===== PLAYER CARD ===== */
+/* PLAYER CARD */
 .player-card {
   max-width: 900px;
   margin: 16px auto;
@@ -31,7 +30,7 @@ html, body {
   position: relative;
 }
 
-/* 16:9 ratio */
+/* 16:9 */
 .video-wrap {
   position: relative;
   width: 100%;
@@ -47,13 +46,13 @@ html, body {
   background: #000;
 }
 
-/* ===== NOW PLAYING BADGE ===== */
+/* NOW PLAYING */
 .now-playing {
   position: absolute;
   top: 12px;
   left: 12px;
   z-index: 10;
-  background: rgba(0,0,0,.7);
+  background: rgba(0,0,0,.75);
   border: 1px solid #ff7a00;
   color: #ff7a00;
   padding: 6px 10px;
@@ -62,22 +61,21 @@ html, body {
   font-weight: 600;
 }
 
-/* ===== SUGGESTIONS GRID ===== */
+/* SUGGESTIONS */
 .suggestions {
   max-width: 900px;
-  margin: 10px auto 24px;
-  padding: 0 10px;
+  margin: 12px auto 24px;
+  padding: 0 12px;
 }
 
 .suggestions h3 {
   margin: 10px 4px;
   font-size: 15px;
-  opacity: .9;
 }
 
 .s-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
   gap: 12px;
 }
 
@@ -87,17 +85,17 @@ html, body {
   border-radius: 14px;
   padding: 12px;
   cursor: pointer;
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s;
+  transition: all .2s ease;
 }
 
 .s-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,.6);
+  box-shadow: 0 8px 18px rgba(0,0,0,.6);
 }
 
 .s-card.active {
   border-color: #ff7a00;
-  box-shadow: 0 0 14px rgba(255,122,0,.4);
+  box-shadow: 0 0 14px rgba(255,122,0,.45);
 }
 
 .s-card img {
@@ -111,7 +109,6 @@ html, body {
   margin-top: 8px;
   font-size: 13px;
   text-align: center;
-  opacity: .9;
 }
 
 /* Plyr color */
@@ -132,8 +129,8 @@ html, body {
       playsinline
       webkit-playsinline
       preload="metadata"
-      crossorigin="anonymous"
-    ></video>
+      crossorigin="anonymous">
+    </video>
   </div>
 </div>
 
@@ -149,105 +146,81 @@ const nowPlaying = document.getElementById("nowPlaying");
 const grid = document.getElementById("suggestions");
 
 let hls = null;
-let currentUrl = localStorage.getItem("stream");
-let currentName = localStorage.getItem("title") || "";
+let player = null;
+let channels = [];
+let currentUrl = null;
 
-/* INIT PLYR */
-const player = new Plyr(video, {
-  controls: [
-    'play',
-    'progress',
-    'current-time',
-    'mute',
-    'volume',
-    'settings',
-    'fullscreen'
-  ]
+/* INIT PLYR ONCE */
+player = new Plyr(video, {
+  controls: ['play','progress','current-time','mute','volume','fullscreen']
 });
 
-/* PLAY CHANNEL */
-function playChannel(url, name) {
-  if (!url) return;
+/* CORE PLAY FUNCTION */
+function playChannel(channel) {
+  if (!channel || !channel.url) return;
 
   if (hls) {
     hls.destroy();
     hls = null;
   }
 
-  nowPlaying.textContent = "Now Playing: " + name;
+  nowPlaying.textContent = "Now Playing: " + channel.name;
 
   if (Hls.isSupported()) {
     hls = new Hls({
-      enableWorker: true,
       capLevelToPlayerSize: true,
       startLevel: -1
     });
-
-    hls.loadSource(url);
+    hls.loadSource(channel.url);
     hls.attachMedia(video);
-
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       video.play().catch(()=>{});
     });
-
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-    video.src = url;
-    video.addEventListener("loadedmetadata", () => {
-      video.play().catch(()=>{});
-    }, { once: true });
+  } else {
+    video.src = channel.url;
+    video.play().catch(()=>{});
   }
 
-  currentUrl = url;
-  currentName = name;
-
-  localStorage.setItem("stream", url);
-  localStorage.setItem("title", name);
+  currentUrl = channel.url;
+  localStorage.setItem("stream", channel.url);
+  localStorage.setItem("title", channel.name);
 
   highlightActive();
 }
 
-/* HIGHLIGHT ACTIVE CARD */
+/* HIGHLIGHT ACTIVE */
 function highlightActive() {
   document.querySelectorAll(".s-card").forEach(card => {
-    card.classList.toggle(
-      "active",
-      card.dataset.url === currentUrl
-    );
+    card.classList.toggle("active", card.dataset.url === currentUrl);
   });
 }
 
-/* LOAD CHANNEL LIST */
+/* LOAD CHANNELS + RENDER GRID */
 fetch("data/channels.json")
   .then(r => r.json())
   .then(data => {
-    const all = [];
-
     data.categories.forEach(cat => {
-      cat.channels.forEach(ch => {
-        all.push(ch);
-
-        if (!currentName && ch.url === currentUrl) {
-          currentName = ch.name;
-          localStorage.setItem("title", currentName);
-        }
-      });
+      cat.channels.forEach(ch => channels.push(ch));
     });
 
-    all.forEach(ch => {
-      const c = document.createElement("div");
-      c.className = "s-card";
-      c.dataset.url = ch.url;
-      c.innerHTML = `
+    grid.innerHTML = "";
+
+    channels.forEach(ch => {
+      const card = document.createElement("div");
+      card.className = "s-card";
+      card.dataset.url = ch.url;
+      card.innerHTML = `
         <img src="${ch.logo}">
         <span>${ch.name}</span>
       `;
-      c.onclick = () => playChannel(ch.url, ch.name);
-      grid.appendChild(c);
+      card.onclick = () => playChannel(ch);
+      grid.appendChild(card);
     });
 
-    if (currentUrl && currentName) {
-      playChannel(currentUrl, currentName);
-    }
+    // AUTO PLAY LAST OR FIRST
+    const savedUrl = localStorage.getItem("stream");
+    const start = channels.find(c => c.url === savedUrl) || channels[0];
+    if (start) playChannel(start);
   });
 </script>
 
