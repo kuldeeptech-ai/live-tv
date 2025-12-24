@@ -2,11 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Live Player</title>
+<title>Live TV Player</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Plyr -->
+<!-- Plyr UI -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
+
+<!-- HLS engine -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.min.js"></script>
 
@@ -68,11 +70,6 @@ body {
   padding: 0 12px;
 }
 
-.suggestions h3 {
-  margin: 10px 4px;
-  font-size: 15px;
-}
-
 .s-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
@@ -85,12 +82,7 @@ body {
   border-radius: 14px;
   padding: 12px;
   cursor: pointer;
-  transition: all .2s ease;
-}
-
-.s-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 18px rgba(0,0,0,.6);
+  transition: .2s ease;
 }
 
 .s-card.active {
@@ -110,17 +102,11 @@ body {
   font-size: 13px;
   text-align: center;
 }
-
-/* Plyr color */
-:root {
-  --plyr-color-main: #ff7a00;
-}
 </style>
 </head>
 
 <body>
 
-<!-- PLAYER -->
 <div class="player-card">
   <div class="now-playing" id="nowPlaying">Loading…</div>
   <div class="video-wrap">
@@ -134,7 +120,6 @@ body {
   </div>
 </div>
 
-<!-- SUGGESTIONS -->
 <div class="suggestions">
   <h3>More Channels</h3>
   <div class="s-grid" id="suggestions"></div>
@@ -142,44 +127,42 @@ body {
 
 <script>
 const video = document.getElementById("video");
-const nowPlaying = document.getElementById("nowPlaying");
+const nowText = document.getElementById("nowPlaying");
 const grid = document.getElementById("suggestions");
 
 let hls = null;
-let player = null;
+let plyr = null;
 let channels = [];
 let currentUrl = null;
 
-/* INIT PLYR ONCE */
-player = new Plyr(video, {
+/* INIT PLYR ONCE (UI ONLY) */
+plyr = new Plyr(video, {
   controls: ['play','progress','current-time','mute','volume','fullscreen']
 });
 
-/* CORE PLAY FUNCTION */
+/* CORE PLAY FUNCTION (ONLY HLS) */
 function playChannel(channel) {
   if (!channel || !channel.url) return;
+
+  nowText.textContent = "Now Playing: " + channel.name;
 
   if (hls) {
     hls.destroy();
     hls = null;
   }
 
-  nowPlaying.textContent = "Now Playing: " + channel.name;
+  hls = new Hls({
+    enableWorker: true,
+    capLevelToPlayerSize: true,
+    startLevel: -1
+  });
 
-  if (Hls.isSupported()) {
-    hls = new Hls({
-      capLevelToPlayerSize: true,
-      startLevel: -1
-    });
-    hls.loadSource(channel.url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play().catch(()=>{});
-    });
-  } else {
-    video.src = channel.url;
+  hls.loadSource(channel.url);
+  hls.attachMedia(video);
+
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
     video.play().catch(()=>{});
-  }
+  });
 
   currentUrl = channel.url;
   localStorage.setItem("stream", channel.url);
@@ -188,22 +171,20 @@ function playChannel(channel) {
   highlightActive();
 }
 
-/* HIGHLIGHT ACTIVE */
+/* ACTIVE HIGHLIGHT */
 function highlightActive() {
   document.querySelectorAll(".s-card").forEach(card => {
     card.classList.toggle("active", card.dataset.url === currentUrl);
   });
 }
 
-/* LOAD CHANNELS + RENDER GRID */
+/* LOAD CHANNELS */
 fetch("data/channels.json")
   .then(r => r.json())
   .then(data => {
     data.categories.forEach(cat => {
       cat.channels.forEach(ch => channels.push(ch));
     });
-
-    grid.innerHTML = "";
 
     channels.forEach(ch => {
       const card = document.createElement("div");
@@ -217,9 +198,9 @@ fetch("data/channels.json")
       grid.appendChild(card);
     });
 
-    // AUTO PLAY LAST OR FIRST
-    const savedUrl = localStorage.getItem("stream");
-    const start = channels.find(c => c.url === savedUrl) || channels[0];
+    // Auto play last or first
+    const saved = localStorage.getItem("stream");
+    const start = channels.find(c => c.url === saved) || channels[0];
     if (start) playChannel(start);
   });
 </script>
