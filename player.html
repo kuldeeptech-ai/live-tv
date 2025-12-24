@@ -5,7 +5,10 @@
 <title>Live TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+<!-- Video.js -->
+<link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/videojs-http-streaming@3.10.0/dist/videojs-http-streaming.min.js"></script>
 
 <style>
 body{
@@ -15,7 +18,7 @@ body{
   font-family:system-ui;
 }
 
-/* PLAYER */
+/* PLAYER CARD */
 .player-card{
   max-width:900px;
   margin:16px auto;
@@ -23,21 +26,21 @@ body{
   overflow:hidden;
   border:2px solid #2a2a2a;
   background:#000;
+  box-shadow:0 0 22px rgba(255,122,0,.18);
 }
 
-.video-wrap{
-  position:relative;
-  width:100%;
-  padding-top:56.25%;
-}
-
-.video-wrap video{
-  position:absolute;
-  inset:0;
+/* VIDEO.JS THEME */
+.video-js{
   width:100%;
   height:100%;
-  object-fit:contain;
-  background:#000;
+}
+.video-js .vjs-control-bar{
+  background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.9));
+}
+.video-js .vjs-big-play-button{
+  background:#ff7a00;
+  border:none;
+  border-radius:50%;
 }
 
 /* NOW PLAYING */
@@ -58,31 +61,28 @@ body{
   margin:0 auto 24px;
   padding:0 12px;
 }
-
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
   gap:12px;
 }
-
 .card{
   background:#141414;
   border:1px solid #262626;
   border-radius:14px;
   padding:12px;
   cursor:pointer;
+  transition:.2s;
 }
-
 .card.active{
   border-color:#ff7a00;
+  box-shadow:0 0 14px rgba(255,122,0,.45);
 }
-
 .card img{
   width:100%;
   height:60px;
   object-fit:contain;
 }
-
 .card span{
   display:block;
   margin-top:8px;
@@ -94,10 +94,15 @@ body{
 
 <body>
 
+<!-- PLAYER -->
 <div class="player-card">
-  <div class="video-wrap">
-    <video id="video" controls playsinline webkit-playsinline></video>
-  </div>
+  <video
+    id="player"
+    class="video-js vjs-default-skin"
+    controls
+    playsinline
+    webkit-playsinline
+  ></video>
 </div>
 
 <div class="now-bar" id="now">Loading…</div>
@@ -107,39 +112,36 @@ body{
 </div>
 
 <script>
-const video = document.getElementById("video");
-const grid  = document.getElementById("grid");
-const now   = document.getElementById("now");
+const now = document.getElementById("now");
+const grid = document.getElementById("grid");
 
-let hls;
+/* INIT VIDEO.JS */
+const player = videojs("player", {
+  autoplay: false,
+  liveui: true,
+  fluid: true,
+  html5: {
+    vhs: {
+      enableLowInitialPlaylist: true
+    }
+  }
+});
+
+let channels = [];
 let currentUrl = null;
 
-/* PLAY */
+/* PLAY CHANNEL */
 function playChannel(ch){
   if(!ch || !ch.url) return;
 
   now.textContent = "Now Playing: " + ch.name;
 
-  if(hls){
-    hls.destroy();
-    hls = null;
-  }
+  player.src({
+    src: ch.url,
+    type: "application/x-mpegURL"
+  });
 
-  video.pause();
-  video.removeAttribute("src");
-  video.load();
-
-  if(Hls.isSupported()){
-    hls = new Hls();
-    hls.loadSource(ch.url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
-      video.play().catch(()=>{});
-    });
-  }else{
-    video.src = ch.url;
-    video.play().catch(()=>{});
-  }
+  player.play().catch(()=>{});
 
   currentUrl = ch.url;
   highlight();
@@ -156,7 +158,6 @@ function highlight(){
 fetch("data/channels.json")
 .then(r=>r.json())
 .then(data=>{
-  const channels=[];
   data.categories.forEach(cat=>{
     cat.channels.forEach(ch=>channels.push(ch));
   });
