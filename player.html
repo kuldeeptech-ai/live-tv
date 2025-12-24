@@ -144,19 +144,16 @@ html, body {
   <h3>More Channels</h3>
   <div class="s-grid" id="suggestions"></div>
 </div>
-
 <script>
 const video = document.getElementById("player");
 const nowText = document.getElementById("nowPlaying");
 const grid = document.getElementById("suggestions");
 
 let hls;
-let current = {
-  url: localStorage.getItem("stream"),
-  name: localStorage.getItem("title") || "Live Channel"
-};
+let currentUrl = localStorage.getItem("stream");
+let currentName = localStorage.getItem("title");
 
-/* ===== INIT PLAYER ===== */
+/* ===== INIT PLYR ===== */
 const plyr = new Plyr(video, {
   controls: [
     'play','progress','current-time',
@@ -164,7 +161,6 @@ const plyr = new Plyr(video, {
   ]
 });
 
-/* Landscape fullscreen */
 plyr.on('enterfullscreen', () => {
   screen.orientation?.lock?.('landscape').catch(()=>{});
 });
@@ -172,7 +168,7 @@ plyr.on('exitfullscreen', () => {
   screen.orientation?.unlock?.();
 });
 
-/* ===== PLAY FUNCTION ===== */
+/* ===== PLAY STREAM ===== */
 function playChannel(url, name) {
   if (!url) return;
 
@@ -188,42 +184,47 @@ function playChannel(url, name) {
     video.play();
   }
 
-  current = { url, name };
-  localStorage.setItem("stream", url);
-  localStorage.setItem("title", name);
+  currentUrl = url;
+  currentName = name || "Live Channel";
+
+  localStorage.setItem("stream", currentUrl);
+  localStorage.setItem("title", currentName);
 
   updateNowPlaying();
   highlightActive();
 }
 
-/* ===== UI UPDATES ===== */
+/* ===== UI ===== */
 function updateNowPlaying() {
-  nowText.textContent = "Now Playing: " + current.name;
+  nowText.textContent = "Now Playing: " + currentName;
 }
 
 function highlightActive() {
   document.querySelectorAll(".s-card").forEach(card => {
     card.classList.toggle(
       "active",
-      card.dataset.url === current.url
+      card.dataset.url === currentUrl
     );
   });
 }
 
-/* Initial play */
-if (current.url) {
-  updateNowPlaying();
-  playChannel(current.url, current.name);
-}
-
-/* ===== LOAD SUGGESTIONS ===== */
+/* ===== LOAD CHANNEL LIST ===== */
 fetch("data/channels.json")
   .then(r => r.json())
   .then(data => {
     const all = [];
-    data.categories.forEach(cat =>
-      cat.channels.forEach(ch => all.push(ch))
-    );
+
+    data.categories.forEach(cat => {
+      cat.channels.forEach(ch => {
+        all.push(ch);
+
+        // 🔑 AUTO-FIX: match URL to get name
+        if (!currentName && ch.url === currentUrl) {
+          currentName = ch.name;
+          localStorage.setItem("title", currentName);
+        }
+      });
+    });
 
     all.forEach(ch => {
       const c = document.createElement("div");
@@ -237,7 +238,9 @@ fetch("data/channels.json")
       grid.appendChild(c);
     });
 
-    highlightActive();
+    if (currentUrl) {
+      playChannel(currentUrl, currentName);
+    }
   });
 </script>
 
