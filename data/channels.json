@@ -50,6 +50,12 @@
           "logo": "https://upload.wikimedia.org/wikipedia/en/b/bf/DangalTVLogo.png",
           "quality": "1080p",
           "url": "https://live-dangal.akamaized.net/liveabr/playlist.m3u8"
+        },
+        {
+          "name": "Colours",
+          "logo": "",
+          "quality": "",
+          "url": "http://localhost:8001/app/play_436f6c6f72735f48443d3f3d313434"
         }
       ]
     },
