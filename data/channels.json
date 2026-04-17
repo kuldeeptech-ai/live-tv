@@ -53,8 +53,8 @@
         },
         {
           "name": "Colours",
-          "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Shemaroo_TV.png",
-          "quality": "1080p",
+          "logo": "",
+          "quality": "",
           "url": "http://localhost:8001/app/play_436f6c6f72735f48443d3f3d313434"
         }
       ]
@@ -101,6 +101,17 @@
           "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0IYmQZYJmNsRTBB0SzE_w8gYcsHIZWuGfndzdiVxvyU59jA4EbOYt84I&s=10",
           "quality": "1080p",
           "url": "https://cdn-1.pishow.tv/live/1291/master.m3u8"
+        }
+      ]
+    },
+    {
+      "name": "Sports",
+      "channels": [
+        {
+          "name": "Star Sports 1 Hd",
+          "logo": "https://ltsk-cdn.s3.eu-west-1.amazonaws.com/jumpstart/Temp_Live/cdn/HLS/Channel/imageContent-8301-j7hc0820-v1/imageContent-8301-j7hc0820-m1.png",
+          "quality": "1080p",
+          "url": "https://sportseera1.pages.dev/star?id=sidhu"
         }
       ]
     }
